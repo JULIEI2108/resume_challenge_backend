@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  resume-challenge
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'content-type'"
+      AllowOrigin: "'*'"
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+  TableName:
+    Type: String
+    Default: clickTable
+
+Resources:
+  ClickFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: handler/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLENAME : !Ref TableName
+      Role: !GetAtt ClickRole.Arn
+      Events:
+        click:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /click
+            Method: get
+            RestApiId:
+              Ref: ClickApi
+      Policies:
+        - PolicyName: apigateway-invoke-lambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt ClickFunction.Arn
+
+
+
+
+  ClickRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: dynamodb-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:Scan'
+                Resource: !GetAtt MyDynamoDBTable.Arn
+
+  ClickApi:
+    Type: AWS::Serverless::Api
+    Properties: 
+      StageName: !Ref StageName
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          title: "Click API"
+        paths:
+          /click:
+            get:
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClickFunction.Arn}/invocations"
+                passthroughBehavior: 'when_no_match'
+                httpMethod: 'POST'
+                type: 'aws_proxy'
+              responses:
+                '200':
+                  description: '200 response'
+      Cors: "'*'"
+
+  ClickFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/ClickFunction
+      RetentionInDays: 7
+
+
+  MyDynamoDBTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "clickNumber"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "clickNumber"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: !Ref TableName
+
+
+  MyPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ClickFunction.Arn
+      Principal: apigateway.amazonaws.com
+      # SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ClickApi}/*/*/*"
+
+  MyLambdaCloudWatchPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ClickFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ClickApi}/dev/*/*/*"
+
+  MyApiGatewayCloudWatchPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ClickFunction.Arn
+      Principal: !Sub "logs.${AWS::Region}.amazonaws.com"
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  ClickApi:
+    Description: "API endpoint to check clickcount"
+    Value: !Sub "https://${ClickApi}.execute-api.${AWS::Region}.amazonaws.com/dev/click/"
+  ClickFunction:
+    Description: "Click Lambda Function ARN"
+    Value: !GetAtt ClickFunction.Arn
+  ClickFunctionIamRole:
+    Description: "Implicit IAM Role created for Click function"
+    Value: !GetAtt ClickRole.Arn

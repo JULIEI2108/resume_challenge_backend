@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS SAM CLI Nested Stack for Auto Dependency Layer Creation
+Metadata:
+  SamCliInfo: 1.76.0
+  key: AWS SAM CLI sync command
+Outputs:
+  ClickFunction6f5fe281DepLayer:
+    Value:
+      Ref: ClickFunction6f5fe281DepLayer
+Resources:
+  ClickFunction6f5fe281DepLayer:
+    Metadata:
+      CreatedBy: AWS SAM CLI sync command
+    Properties:
+      CompatibleRuntimes:
+      - python3.9
+      ContentUri: /Users/juliejin/Documents/dev/resumeChallengeBackend/my-sam-project/.aws-sam/auto-dependency-layer/ClickFunction6f5fe281DepLayer
+      Description: Auto created layer for dependencies of function ClickFunction
+      LayerName: resumeChallenge0fec7c38-ClickFunction6f5fe281-DepLayer
+      RetentionPolicy: Delete
+    Type: AWS::Serverless::LayerVersion
+Transform: AWS::Serverless-2016-10-31
