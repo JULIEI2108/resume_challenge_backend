@@ -1,9 +1,9 @@
 pipeline {
   agent any
   environment {
-    PIPELINE_USER_CREDENTIAL_ID = 'AKIAQD7QGH346S36WSOQ'
+    PIPELINE_USER_CREDENTIAL_ID = 'sam-jenkins-credentials.g'
     SAM_TEMPLATE = 'MY-SAM-PROJECT/template.yaml'
-    MAIN_BRANCH = 'https://github.com/JULIEI2108/resume_challenge_backend.git'
+    MAIN_BRANCH = 'main'
     TESTING_STACK_NAME = 'sam-resumeChallenge-app'
     TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::008556789497:role/aws-sam-cli-managed-dev-pipe-PipelineExecutionRole-H8SW0L86C6DI'
     TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::008556789497:role/aws-sam-cli-managed-dev-p-CloudFormationExecutionR-95HLYXORK5XJ'
