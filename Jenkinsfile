@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    PIPELINE_USER_CREDENTIAL_ID = 'sam-jenkins-credentials.g'
+    PIPELINE_USER_CREDENTIAL_ID = 'sam-jenkins-credentials.'
     SAM_TEMPLATE = 'MY-SAM-PROJECT/template.yaml'
     MAIN_BRANCH = 'main'
     TESTING_STACK_NAME = 'sam-resumeChallenge-app'
